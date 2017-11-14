@@ -34,6 +34,8 @@ RIVERS_PATH = shp.natural_earth(resolution='110m',
 class TestLakes(object):
     def setup_class(self):
         self.reader = shp.Reader(LAKES_PATH)
+        names = [r.attributes['name'] for r in self.reader.records()]
+        self.index = names.index('Lago de\rNicaragua')
 
     def _assert_geometry(self, geometry):
         assert geometry.type == 'MultiPolygon'
@@ -59,7 +61,7 @@ class TestLakes(object):
         assert len(geometries) == len(self.reader)
 
         # Choose a nice small lake
-        lake = geometries[14]
+        lake = geometries[self.index]
         self._assert_geometry(lake)
 
     def test_record(self):
@@ -67,10 +69,11 @@ class TestLakes(object):
         assert len(records) == len(self.reader)
 
         # Choose a nice small lake
-        lake_record = records[14]
+        lake_record = records[self.index]
         assert lake_record.attributes.get('name') == 'Lago de\rNicaragua'
         assert sorted(lake_record.attributes.keys()) == \
-            sorted(['admin', 'featurecla', 'scalerank', 'name_alt', 'name'])
+            sorted(['admin', 'featurecla', 'scalerank', 'name_alt', 'name',
+                    'min_label', 'min_zoom'])
         lake = lake_record.geometry
         self._assert_geometry(lake)
 
@@ -89,6 +92,8 @@ class TestLakes(object):
 class TestRivers(object):
     def setup_class(self):
         self.reader = shp.Reader(RIVERS_PATH)
+        self.index = [r.attributes['name']
+                      for r in self.reader.records()].index('Peace')
 
     def _assert_geometry(self, geometry):
         assert geometry.type == 'MultiLineString'
@@ -96,17 +101,17 @@ class TestRivers(object):
 
         linestring = geometry[0]
         coords = linestring.coords
-        assert round(abs(coords[0][0] - -113.823382738076), 7) == 0
-        assert round(abs(coords[0][1] - 58.7102151556671), 7) == 0
-        assert round(abs(coords[1][0] - -113.71351864302348), 7) == 0
-        assert round(abs(coords[1][1] - 58.669261583075794), 7) == 0
+        assert round(abs(coords[0][0] - -124.83563045947423), 7) == 0
+        assert round(abs(coords[0][1] - 56.75692352968272), 7) == 0
+        assert round(abs(coords[1][0] - -124.20045039940291), 7) == 0
+        assert round(abs(coords[1][1] - 56.243492336646824), 7) == 0
 
     def test_geometry(self):
         geometries = list(self.reader.geometries())
         assert len(geometries) == len(self.reader)
 
         # Choose a nice small river
-        river = geometries[6]
+        river = geometries[self.index]
         self._assert_geometry(river)
 
     def test_record(self):
@@ -114,10 +119,13 @@ class TestRivers(object):
         assert len(records) == len(self.reader)
 
         # Choose a nice small lake
-        river_record = records[6]
+        river_record = records[self.index]
         expected_attributes = {'featurecla': 'River',
                                'scalerank': 2,
-                               'name': 'Peace'}
+                               'name': 'Peace',
+                               'name_en': 'Peace',
+                               'min_label': 3.1,
+                               'min_zoom': 2.1}
         for key, value in river_record.attributes.items():
             if key == 'name_alt':
                 # This value changed between pyshp 1.2.10 and 1.2.11, test it
